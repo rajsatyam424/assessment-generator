@@ -339,31 +339,63 @@
     margin-bottom: 12px;
   }
   .question .option {
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: 10px 12px;
+    border-radius: 8px;
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .question .option:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .question .option.selected {
+    border-color: var(--accent);
+    background: var(--accent-glow);
   }
   .question .option .letter {
     display: inline-block;
-    width: 24px;
-    height: 24px;
-    line-height: 24px;
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
     text-align: center;
-    border-radius: 4px;
+    border-radius: 50%;
     background: var(--surface-2);
     font-weight: 700;
     font-size: 0.8rem;
-    margin-right: 8px;
+    margin-right: 10px;
+    transition: all 0.15s;
+  }
+  .question .option.selected .letter {
+    background: var(--accent);
+    color: white;
   }
   .question .option.correct {
-    border-color: var(--green);
-    background: var(--green-bg);
+    border-color: #34c759;
+    background: rgba(52, 199, 89, 0.1);
   }
   .question .option.correct .letter {
-    background: var(--green);
-    color: #0f0f1a;
+    background: #34c759;
+    color: white;
+  }
+  .question .option.wrong {
+    border-color: #ff3b30;
+    background: rgba(255, 59, 48, 0.1);
+  }
+  .question .option.wrong .letter {
+    background: #ff3b30;
+    color: white;
+  }
+  .question .option.disabled {
+    cursor: default;
+    opacity: 0.8;
+  }
+  .question .option.disabled:hover {
+    border-color: var(--border);
+    background: var(--surface);
   }
   .question .explanation-toggle {
     cursor: pointer;
@@ -533,14 +565,16 @@
     </div>
   </div>
 
-  <!-- Step 4: Review assessment -->
+  <!-- Step 4: Attempt assessment -->
   <div class="card hidden" id="card-step4">
     <div class="card-title"><span class="icon">📋</span> Assessment</div>
     <div id="assessmentMeta"></div>
     <div id="assessmentQuestions"></div>
+    <div id="assessmentScore" class="hidden" style="margin-top: 20px; padding: 20px; background: var(--surface-2); border-radius: var(--radius); text-align: center; font-size: 1.1rem; border: 1px solid var(--border);"></div>
     <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
-      <button class="btn btn-secondary" onclick="goToStep3()">Back to Validation</button>
-      <button class="btn btn-primary" onclick="resetAll()">New Assessment</button>
+      <button class="btn btn-primary" id="btnSubmit" onclick="submitAssessment()">Submit Assessment</button>
+      <button class="btn btn-secondary hidden" id="btnResetAttempt" onclick="resetAttempt()">Reset Attempt</button>
+      <button class="btn btn-secondary" onclick="goToStep1()">New Course</button>
     </div>
   </div>
 
@@ -802,7 +836,7 @@ function renderValidation(result) {
   document.getElementById('validateStatus').innerHTML = '';
 }
 
-// --- Step 4: Show assessment ---
+// --- Interactive attempt ---
 function showReview() {
   const data = state.assessmentData;
   if (!data || !data.questions) { showToast('No assessment data', 'error'); return; }
@@ -841,14 +875,14 @@ function showReview() {
     html += '</div></div>';
   }
   const qs = data.questions;
-  html += '<div style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-dim);">' + qs.length + ' questions</div>';
+  html += '<div style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-dim);">' + qs.length + ' questions &middot; Select your answers then submit</div>';
   metaEl.innerHTML = html;
 
-  // Questions
+  // Questions — interactive
   const qEl = document.getElementById('assessmentQuestions');
   let qHtml = '';
   qs.forEach((q, i) => {
-    qHtml += '<div class="question">';
+    qHtml += '<div class="question" id="q-' + i + '">';
     qHtml += '<div class="q-stem">Q' + (i + 1) + '. ';
     if (q.topic) qHtml += '<span class="q-tag">' + escapeHtml(q.topic) + '</span>';
     qHtml += '<span style="margin-left: 8px;">' + escapeHtml(q.stem) + '</span></div>';
@@ -856,20 +890,18 @@ function showReview() {
     qHtml += '<div class="options">';
     const letters = ['A', 'B', 'C', 'D'];
     const options = [q.a, q.b, q.c, q.d];
-    const correct = q.answer && q.answer.toUpperCase();
     options.forEach((opt, oi) => {
       if (!opt) return;
-      const isCorrect = letters[oi] === correct;
-      qHtml += '<div class="option' + (isCorrect ? ' correct' : '') + '">';
+      qHtml += '<div class="option" id="opt-' + i + '-' + oi + '" onclick="selectOption(' + i + ',' + oi + ')" data-q="' + i + '" data-opt="' + oi + '" data-letter="' + letters[oi] + '">';
       qHtml += '<span class="letter">' + letters[oi] + '</span>';
       qHtml += escapeHtml(opt);
       qHtml += '</div>';
     });
     qHtml += '</div>';
 
-    qHtml += '<div class="explanation-toggle" onclick="this.nextElementSibling.classList.toggle(\'visible\'); this.textContent = this.nextElementSibling.classList.contains(\'visible\') ? \'Hide explanation\' : \'Show explanation\'; this.textContent = this.nextElementSibling.classList.contains(\'visible\') ? \'Hide explanation\' : \'Show explanation\';">Show explanation</div>';
-    qHtml += '<div class="explanation">';
-    if (q.answer) qHtml += '<strong style="color: var(--green);">Answer: ' + escapeHtml(q.answer) + '</strong><br><br>';
+    qHtml += '<div class="explanation-toggle hidden" id="exp-toggle-' + i + '" onclick="document.getElementById(\'exp-' + i + '\').classList.toggle(\'visible\'); this.textContent = this.nextElementSibling.classList.contains(\'visible\') ? \'Hide explanation\' : \'Show explanation\';">Show explanation</div>';
+    qHtml += '<div class="explanation" id="exp-' + i + '">';
+    if (q.answer) qHtml += '<strong style="color: #34c759;">Answer: ' + escapeHtml(q.answer) + '</strong><br><br>';
     if (q.explanation) qHtml += escapeHtml(q.explanation);
     qHtml += '</div>';
 
@@ -877,7 +909,112 @@ function showReview() {
   });
   qEl.innerHTML = qHtml;
 
+  // Reset state
+  document.getElementById('btnSubmit').disabled = false;
+  document.getElementById('btnSubmit').textContent = 'Submit Assessment';
+  document.getElementById('btnResetAttempt').classList.add('hidden');
+  document.getElementById('assessmentScore').classList.add('hidden');
+  window._selectedAnswers = {};
+  window._submitted = false;
+
   setStep(3);
+}
+
+function selectOption(qIdx, optIdx) {
+  if (window._submitted) return;
+  
+  // Deselect all options in this question
+  const qDiv = document.getElementById('q-' + qIdx);
+  qDiv.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+  
+  // Select this one
+  const opt = document.getElementById('opt-' + qIdx + '-' + optIdx);
+  opt.classList.add('selected');
+  
+  window._selectedAnswers[qIdx] = opt.dataset.letter;
+}
+
+function submitAssessment() {
+  const data = state.assessmentData;
+  if (!data || !data.questions) return;
+  const qs = data.questions;
+
+  // Count answered
+  const answered = Object.keys(window._selectedAnswers).length;
+  if (answered < qs.length) {
+    showToast('Answer all ' + qs.length + ' questions first (' + answered + ' done)', 'error');
+    return;
+  }
+
+  window._submitted = true;
+  let score = 0;
+  const correctLetters = 'ABCD';
+
+  qs.forEach((q, i) => {
+    const chosen = window._selectedAnswers[i];
+    const isCorrect = chosen === q.answer.toUpperCase();
+
+    // Mark each option
+    document.querySelectorAll('#q-' + i + ' .option').forEach((opt, oi) => {
+      opt.classList.add('disabled');
+      opt.onclick = null;
+      const letter = correctLetters[oi];
+      if (letter === q.answer.toUpperCase()) {
+        opt.classList.add('correct');
+      } else if (letter === chosen && !isCorrect) {
+        opt.classList.add('wrong');
+      }
+    });
+
+    if (isCorrect) score++;
+
+    // Show explanation toggle
+    document.getElementById('exp-toggle-' + i).classList.remove('hidden');
+  });
+
+  const pct = Math.round((score / qs.length) * 100);
+  const scoreEl = document.getElementById('assessmentScore');
+  scoreEl.classList.remove('hidden');
+  const color = pct >= 80 ? '#34c759' : pct >= 50 ? '#FF006E' : '#ff3b30';
+  scoreEl.innerHTML = 'You scored <strong style="font-size: 1.5rem; color: ' + color + ';">' + score + '/' + qs.length + '</strong> (' + pct + '%)';
+  
+  document.getElementById('btnSubmit').disabled = true;
+  document.getElementById('btnSubmit').textContent = 'Submitted';
+  document.getElementById('btnResetAttempt').classList.remove('hidden');
+
+  // Mark completed in history sidebar
+  const activeItem = document.querySelector('#historyList .sidebar-item.active');
+  if (activeItem) {
+    const meta = activeItem.querySelector('.meta');
+    if (meta && !meta.textContent.includes('Attempted')) {
+      meta.innerHTML += ' &middot; <strong style="color: #34c759;">Attempted</strong> <span style="color: ' + color + ';">' + score + '/' + qs.length + '</span>';
+    }
+  }
+}
+
+function resetAttempt() {
+  window._submitted = false;
+  window._selectedAnswers = {};
+  
+  const qs = state.assessmentData.questions;
+  qs.forEach((q, i) => {
+    document.querySelectorAll('#q-' + i + ' .option').forEach(opt => {
+      opt.classList.remove('correct', 'wrong', 'selected', 'disabled');
+      opt.onclick = function() { selectOption(i, parseInt(this.dataset.opt)); };
+    });
+    document.getElementById('exp-toggle-' + i).classList.add('hidden');
+  });
+
+  document.getElementById('assessmentScore').classList.add('hidden');
+  document.getElementById('btnSubmit').disabled = false;
+  document.getElementById('btnSubmit').textContent = 'Submit Assessment';
+  document.getElementById('btnResetAttempt').classList.add('hidden');
+
+  // Remove attempted badge from sidebar
+  const activeItem = document.querySelector('#historyList .sidebar-item.active .meta');
+  if (activeItem) {
+    activeItem.innerHTML = activeItem.innerHTML.replace(/ &middot;.*/, '');
+  }
 }
 
 function resetAll() {
@@ -916,12 +1053,12 @@ function updateSidebars(data, courseName) {
   const item = document.createElement('div');
   item.className = 'sidebar-item active';
   item.innerHTML = '<div class="title">' + escapeHtml(name) + '</div><div class="meta">' + qCount + ' questions</div>';
+  item.dataset.courseName = name;
+  item.dataset.qCount = qCount;
   item.onclick = () => {
     document.querySelectorAll('#historyList .sidebar-item').forEach(el => el.classList.remove('active'));
     item.classList.add('active');
-    if (state.assessmentData) {
-      showReview();
-    }
+    showReview();
   };
   list.insertBefore(item, list.firstChild);
 
