@@ -47,7 +47,9 @@ def call_llm(
 
     client = OpenAI(api_key=key)
 
-    if provider == "openrouter":
+    if provider == "deepseek":
+        client = OpenAI(api_key=key, base_url="https://api.deepseek.com/v1")
+    elif provider == "openrouter":
         client = OpenAI(api_key=key, base_url="https://openrouter.ai/api/v1")
     elif provider == "openai":
         pass  # default base_url
@@ -75,7 +77,7 @@ def call_llm(
             {"role": "user", "content": prompt},
         ],
         temperature=0.3,
-        timeout=30,
+        timeout=60,
     )
 
     raw = response.choices[0].message.content

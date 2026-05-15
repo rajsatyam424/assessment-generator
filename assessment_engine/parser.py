@@ -1,5 +1,6 @@
 """
 Parser — extracts structured assessment data from LLM JSON responses.
+Normalizes field naming (accepts stem/question, a/A, b/B, etc.)
 """
 
 import json
@@ -15,6 +16,51 @@ class ParseError(ValueError):
     pass
 
 
+_FIELD_MAP = {
+    "stem": "stem",
+    "question": "stem",
+    "a": "a", "A": "a",
+    "b": "b", "B": "b",
+    "c": "c", "C": "c",
+    "d": "d", "D": "d",
+}
+
+
+def _normalize_question(q: dict, idx: int) -> dict:
+    """Normalize a question dict to canonical field names (stem, a, b, c, d, answer, explanation, topic, qtype)."""
+    out = {}
+    out["number"] = q.get("number", idx + 1)
+
+    # Map stem/question
+    out["stem"] = q.get("stem") or q.get("question") or f"[missing stem for Q{idx+1}]"
+
+    # Map option fields
+    for canonical, variants in [("a", ["a", "A"]), ("b", ["b", "B"]), ("c", ["c", "C"]), ("d", ["d", "D"])]:
+        val = None
+        for v in variants:
+            val = q.get(v)
+            if val:
+                break
+        out[canonical] = val or f"[missing option {canonical.upper()}]"
+
+    out["answer"] = q.get("answer", "A")
+    out["explanation"] = q.get("explanation", "")
+    out["topic"] = q.get("topic", q.get("[Topic]", ""))
+    out["qtype"] = q.get("qtype", "concept")
+
+    # Strip [Topic] prefix from stem if LLM put it there, and use it as topic
+    stem = out["stem"]
+    topic_match = re.match(r'^\[([^\]]+)\]\s*', stem)
+    if topic_match:
+        extracted_topic = topic_match.group(1)
+        if not out["topic"] or out["topic"].startswith("[missing"):
+            out["topic"] = extracted_topic
+        # Remove the [Topic] prefix from stem for clean display
+        out["stem"] = stem[topic_match.end():].strip()
+
+    return out
+
+
 def parse_response(text: str) -> dict[str, Any]:
     """
     Parse LLM response text into a structured assessment dict.
@@ -23,6 +69,7 @@ def parse_response(text: str) -> dict[str, Any]:
     - Raw JSON
     - JSON wrapped in markdown code fences (```json ... ```)
     - JSON with leading/trailing whitespace or stray characters
+    - Both stem/question and a/A/b/B/c/C/d/D field naming
 
     Returns:
         dict with keys: assessment_name, about_assessment, who_this_is_for,
@@ -61,13 +108,8 @@ def parse_response(text: str) -> dict[str, Any]:
     if not isinstance(data.get("questions"), list):
         raise ParseError("'questions' must be a list")
 
-    # Normalize: ensure all questions have required fields
-    for i, q in enumerate(data["questions"]):
-        q.setdefault("number", i + 1)
-        for field in ["stem", "a", "b", "c", "d", "answer", "explanation", "topic", "qtype"]:
-            if field not in q:
-                logger.warning("Question %d missing field '%s' — filling with placeholder", i + 1, field)
-                q[field] = f"[missing {field}]"
+    # Normalize questions to canonical field names
+    data["questions"] = [_normalize_question(q, i) for i, q in enumerate(data["questions"])]
 
     logger.info(
         "Parsed assessment '%s' with %d questions",

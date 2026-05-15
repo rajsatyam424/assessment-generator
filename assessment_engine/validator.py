@@ -103,7 +103,7 @@ def validate(data: dict) -> ValidationResult:
         count = coverage.get(t, 0)
         if count < config.TOPIC_MIN_QUESTIONS:
             issues.append(
-                f"Topic '{t}': {count} questions (need {config.TOPIC_MIN_QUESTINGS}+)"
+                f"Topic '{t}': {count} questions (need {config.TOPIC_MIN_QUESTIONS}+)"
             )
         if count > config.TOPIC_MAX_QUESTIONS:
             issues.append(

@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assessment Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --surface-2: #242440;
+    --border: #2d2d50;
+    --text: #e8e8f0;
+    --text-dim: #8888aa;
+    --accent: #7c4dff;
+    --accent-glow: rgba(124, 77, 255, 0.3);
+    --green: #00e676;
+    --green-bg: rgba(0, 230, 118, 0.12);
+    --amber: #ffd54f;
+    --amber-bg: rgba(255, 213, 79, 0.12);
+    --red: #ff5252;
+    --red-bg: rgba(255, 82, 82, 0.12);
+    --blue: #448aff;
+    --blue-bg: rgba(68, 138, 255, 0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 20% 50%, rgba(124, 77, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(0, 230, 118, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(68, 138, 255, 0.04) 0%, transparent 50%);
+    z-index: -1;
+    animation: drift 30s ease-in-out infinite alternate;
+  }
+  @keyframes drift {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(-5%, -5%); }
+  }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #7c4dff, #00e676);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.03em;
+  }
+  header p {
+    color: var(--text-dim);
+    margin-top: 8px;
+    font-size: 1.05rem;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 24px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: rgba(124, 77, 255, 0.3); }
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-title .icon { font-size: 1.3rem; }
+
+  /* Form elements */
+  .input-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .input-group input {
+    flex: 1;
+    min-width: 200px;
+  }
+  input, textarea {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  textarea {
+    resize: vertical;
+    min-height: 200px;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    background: linear-gradient(135deg, #7c4dff, #651fff);
+    color: white;
+    box-shadow: 0 4px 15px var(--accent-glow);
+  }
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--accent-glow);
+  }
+  .btn-secondary {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
+  .btn-success {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid rgba(0, 230, 118, 0.3);
+  }
+  .btn-success:hover:not(:disabled) {
+    background: rgba(0, 230, 118, 0.2);
+  }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    justify-content: center;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    transition: all 0.3s;
+  }
+  .step .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--border);
+    font-size: 0.75rem;
+    font-weight: 700;
+    transition: all 0.3s;
+  }
+  .step.active {
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(124, 77, 255, 0.4);
+  }
+  .step.active .num { background: var(--accent); color: white; }
+  .step.done {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid rgba(0, 230, 118, 0.3);
+  }
+  .step.done .num { background: var(--green); color: #0f0f1a; }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Status badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .badge-success { background: var(--green-bg); color: var(--green); }
+  .badge-warning { background: var(--amber-bg); color: var(--amber); }
+  .badge-error { background: var(--red-bg); color: var(--red); }
+  .badge-info { background: var(--blue-bg); color: var(--blue); }
+
+  /* Questions list */
+  .question {
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .question .q-stem {
+    font-weight: 600;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+  }
+  .question .q-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .question .options {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .question .option {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .question .option .letter {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 4px;
+    background: var(--surface-2);
+    font-weight: 700;
+    font-size: 0.8rem;
+    margin-right: 8px;
+  }
+  .question .option.correct {
+    border-color: var(--green);
+    background: var(--green-bg);
+  }
+  .question .option.correct .letter {
+    background: var(--green);
+    color: #0f0f1a;
+  }
+  .question .explanation-toggle {
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    padding: 4px 0;
+    user-select: none;
+  }
+  .question .explanation-toggle:hover { color: var(--accent); }
+  .question .explanation {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    background: rgba(124, 77, 255, 0.06);
+    border-left: 3px solid var(--accent);
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .question .explanation.visible { display: block; }
+
+  /* Issues list */
+  .issues-list { list-style: none; }
+  .issues-list li {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: start;
+    gap: 8px;
+  }
+  .issues-list li::before { content: '\26A0'; flex-shrink: 0; }
+  .issues-list li.issue-warning {
+    background: var(--amber-bg);
+    color: var(--amber);
+  }
+  .issues-list li.issue-error {
+    background: var(--red-bg);
+    color: var(--red);
+  }
+
+  /* Hidden */
+  .hidden { display: none !important; }
+
+  /* Summary row */
+  .summary-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .stat-box {
+    flex: 1;
+    min-width: 120px;
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .stat-box .num {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--accent);
+    display: block;
+  }
+  .stat-box .label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* Step 2 hint box */
+  .hint-box {
+    background: var(--blue-bg);
+    border: 1px solid rgba(68, 138, 255, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-top: 16px;
+    font-size: 0.9rem;
+    color: var(--blue);
+  }
+  .hint-box code {
+    background: rgba(68, 138, 255, 0.15);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+  }
+  .copy-btn {
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: none;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 4px 12px;
+    float: right;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover {
+    background: var(--accent-glow);
+  }
+
+  @media (max-width: 600px) {
+    .container { padding: 20px 16px; }
+    header h1 { font-size: 1.6rem; }
+    .card { padding: 20px; }
+    .steps { flex-wrap: wrap; }
+    .step { font-size: 0.75rem; padding: 6px 12px; }
+    .input-group { flex-direction: column; }
+    .stat-box { min-width: 80px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Assessment Generator</h1>
+    <p>Enter a course name. Get a 25-question MCQ assessment with explanations.</p>
+  </header>
+
+  <!-- Steps indicator -->
+  <div class="steps" id="steps">
+    <div class="step active" id="step1"><span class="num">1</span> Course</div>
+    <div class="step" id="step2"><span class="num">2</span> LLM Call</div>
+    <div class="step" id="step3"><span class="num">3</span> Validate</div>
+    <div class="step" id="step4"><span class="num">4</span> Review</div>
+  </div>
+
+  <!-- Step 1: Course name -->
+  <div class="card" id="card-step1">
+    <div class="card-title"><span class="icon">🎯</span> What course is this assessment for?</div>
+    <div class="input-group">
+      <input type="text" id="courseName" placeholder="e.g. First Aid Basics, English Grammar, Workplace Safety" autofocus>
+      <button class="btn btn-primary" id="btnStart" onclick="handleStart()">
+        Get Prompt
+      </button>
+      <button class="btn btn-success" id="btnGenerate" onclick="handleGenerate()" data-autogen-text="Generate with AI">
+        Generate with AI
+      </button>
+    </div>
+    <div style="margin-top: 8px; font-size: 0.8rem; color: var(--text-dim);">
+      <strong>Generate with AI</strong> = one click, calls DeepSeek from browser &middot;
+      <strong>Get Prompt</strong> = manual copy-paste to your own LLM
+    </div>
+    <div id="startStatus" class="hidden" style="margin-top: 12px;"></div>
+  </div>
+
+  <!-- Step 2: LLM call (client side) -->
+  <div class="card hidden" id="card-step2">
+    <div class="card-title"><span class="icon">🤖</span> Run this through an LLM</div>
+    <p style="color: var(--text-dim); margin-bottom: 12px; font-size: 0.9rem;">
+      Copy the prompt below and send it to any LLM (ChatGPT, Claude, DeepSeek, etc.).
+      Paste the raw response back here.
+    </p>
+    <div class="hint-box">
+      <span id="modelHint">Model: gpt-4o-mini</span>
+      <button class="copy-btn" onclick="copyPrompt()">Copy</button>
+    </div>
+    <textarea id="promptArea" readonly></textarea>
+    <div style="margin-top: 16px;">
+      <div class="card-title" style="margin-bottom: 8px;"><span class="icon">📥</span> Paste LLM response</div>
+      <textarea id="llmResponse" placeholder="Paste the LLM's complete response here..."></textarea>
+      <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+        <button class="btn btn-primary" id="btnValidate" onclick="handleValidate()">Validate</button>
+        <button class="btn btn-secondary" id="btnBack1" onclick="goToStep1()">Back</button>
+      </div>
+    </div>
+    <div id="validateStatus" class="hidden" style="margin-top: 12px;"></div>
+  </div>
+
+  <!-- Step 3: Validation results -->
+  <div class="card hidden" id="card-step3">
+    <div class="card-title"><span class="icon">🔍</span> Validation Results</div>
+    <div id="validationResults"></div>
+    <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+      <button class="btn btn-success hidden" id="btnShowReview" onclick="showReview()">View Assessment</button>
+      <button class="btn btn-secondary" id="btnBack2" onclick="goToStep2()">Back</button>
+      <button class="btn btn-secondary" id="btnNew1" onclick="resetAll()">New Assessment</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Review assessment -->
+  <div class="card hidden" id="card-step4">
+    <div class="card-title"><span class="icon">📋</span> Assessment</div>
+    <div id="assessmentMeta"></div>
+    <div id="assessmentQuestions"></div>
+    <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
+      <button class="btn btn-secondary" onclick="goToStep3()">Back to Validation</button>
+      <button class="btn btn-primary" onclick="resetAll()">New Assessment</button>
+    </div>
+  </div>
+
+  <!-- Error / status toast area -->
+  <div id="toast" class="hidden" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); z-index: 100; max-width: 90%;"></div>
+
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+let state = {
+  promptId: null,
+  prompt: '',
+  model: '',
+  baseUrl: '',
+  rawOutput: '',
+  assessmentData: null,
+  issues: [],
+  validationPassed: false
+};
+
+// --- Toast ---
+let toastTimer = null;
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderLeft = '4px solid ' + (type === 'error' ? '#ff5252' : type === 'success' ? '#00e676' : '#448aff');
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+// --- Step navigation ---
+function setStep(step) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step' + i);
+    el.classList.remove('active', 'done');
+    if (i < step) el.classList.add('done');
+    else if (i === step) el.classList.add('active');
+  }
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('card-step' + i).classList.toggle('hidden', i !== step);
+  }
+}
+
+function goToStep1() { setStep(1); }
+function goToStep2() { setStep(2); }
+function goToStep3() { setStep(3); }
+function goToStep4() { setStep(4); }
+
+// --- Step 1: Start ---
+async function handleStart() {
+  const name = document.getElementById('courseName').value.trim();
+  if (!name) { showToast('Enter a course name', 'error'); return; }
+
+  const btn = document.getElementById('btnStart');
+  const status = document.getElementById('startStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading...';
+  status.classList.remove('hidden');
+  status.innerHTML = '<span class="spinner"></span> Getting prompt...';
+
+  try {
+    const resp = await fetch(API_BASE + '/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ course_name: name })
+    });
+    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+    const data = await resp.json();
+
+    state.promptId = data.prompt_id;
+    state.prompt = data.prompt;
+    state.model = data.model;
+    state.baseUrl = data.base_url;
+
+    document.getElementById('promptArea').value = data.prompt;
+    document.getElementById('modelHint').textContent = 'Model: ' + data.model + ' | Base URL: ' + data.base_url;
+
+    status.innerHTML = '<span class="badge badge-success">Prompt ready. Copy it and send to the LLM.</span>';
+    setStep(2);
+  } catch (e) {
+    status.innerHTML = '<span class="badge badge-error">' + e.message + '</span>';
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Get Prompt';
+  }
+}
+
+// --- Auto-generate (client-side LLM call) ---
+async function handleGenerate() {
+  const name = document.getElementById('courseName').value.trim();
+  if (!name) { showToast('Enter a course name', 'error'); return; }
+
+  const btn = document.getElementById('btnGenerate');
+  const btnStart = document.getElementById('btnStart');
+  const status = document.getElementById('startStatus');
+  btn.disabled = true;
+  btnStart.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating...';
+  status.classList.remove('hidden');
+  status.innerHTML = '<span class="spinner"></span> Getting prompt from server...';
+
+  try {
+    // Step 1: Get prompt + API key from /start
+    const startResp = await fetch(API_BASE + '/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ course_name: name })
+    });
+    if (!startResp.ok) throw new Error('Server error: ' + startResp.status);
+    const startData = await startResp.json();
+
+    state.promptId = startData.prompt_id;
+    state.prompt = startData.prompt;
+    state.model = startData.model;
+    state.baseUrl = startData.base_url;
+
+    status.innerHTML = '<span class="spinner"></span> Calling DeepSeek from browser (15-60s)...';
+    await new Promise(r => setTimeout(r, 100)); // let UI breathe
+
+    // Step 2: Call DeepSeek directly from browser
+    const llmResp = await fetch(startData.base_url + '/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + startData.api_key
+      },
+      body: JSON.stringify({
+        model: startData.model,
+        messages: [
+          { role: 'system', content: 'You are a precise learning assessment designer. Always return valid JSON matching the requested structure exactly. No markdown, no code fences, no extra text.' },
+          { role: 'user', content: startData.prompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 8192
+      })
+    });
+
+    if (!llmResp.ok) {
+      const errText = await llmResp.text();
+      throw new Error('DeepSeek error: ' + llmResp.status + ' ' + errText);
+    }
+
+    const llmData = await llmResp.json();
+    const rawOutput = llmData.choices[0].message.content;
+    if (!rawOutput) throw new Error('Empty response from DeepSeek');
+
+    state.rawOutput = rawOutput;
+
+    // Step 3: Validate via /validate
+    status.innerHTML = '<span class="spinner"></span> Validating...';
+    const valResp = await fetch(API_BASE + '/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt_id: state.promptId, raw_output: rawOutput })
+    });
+    if (!valResp.ok) throw new Error('Server error: ' + valResp.status);
+    const valData = await valResp.json();
+
+    state.issues = valData.issues || [];
+    state.validationPassed = valData.success;
+    state.assessmentData = valData.data;
+
+    status.innerHTML = valData.success
+      ? '<span class="badge badge-success">Generation complete</span>'
+      : '<span class="badge badge-warning">Generated with some issues</span>';
+
+    renderValidation(valData);
+    setStep(3);
+  } catch (e) {
+    status.innerHTML = '<span class="badge badge-error">' + e.message + '</span>';
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = btn.getAttribute('data-autogen-text') || 'Generate with AI';
+    btnStart.disabled = false;
+  }
+}
+
+// --- Copy prompt ---
+function copyPrompt() {
+  const ta = document.getElementById('promptArea');
+  ta.select();
+  navigator.clipboard.writeText(ta.value).then(() => {
+    showToast('Prompt copied to clipboard', 'success');
+  }).catch(() => {
+    document.execCommand('copy');
+    showToast('Prompt copied', 'success');
+  });
+}
+
+// --- Step 2: Validate ---
+async function handleValidate() {
+  const raw = document.getElementById('llmResponse').value.trim();
+  if (!raw) { showToast('Paste the LLM response first', 'error'); return; }
+
+  const btn = document.getElementById('btnValidate');
+  const status = document.getElementById('validateStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Validating...';
+  status.classList.remove('hidden');
+  status.innerHTML = '<span class="spinner"></span> Validating...';
+
+  state.rawOutput = raw;
+
+  try {
+    const resp = await fetch(API_BASE + '/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt_id: state.promptId, raw_output: raw })
+    });
+    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+    const data = await resp.json();
+
+    state.issues = data.issues || [];
+    state.validationPassed = data.success;
+    state.assessmentData = data.data;
+
+    renderValidation(data);
+    setStep(3);
+  } catch (e) {
+    status.innerHTML = '<span class="badge badge-error">' + e.message + '</span>';
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Validate';
+  }
+}
+
+function renderValidation(result) {
+  const container = document.getElementById('validationResults');
+  const showBtn = document.getElementById('btnShowReview');
+
+  if (result.success && result.data) {
+    const qs = result.data.questions || [];
+    container.innerHTML = `
+      <div class="summary-row">
+        <div class="stat-box"><span class="num">${qs.length}</span><span class="label">Questions</span></div>
+        <div class="stat-box"><span class="num">${result.data.learning_outcomes ? result.data.learning_outcomes.length : 0}</span><span class="label">Learning Outcomes</span></div>
+        <div class="stat-box"><span class="num">${result.data.topics ? result.data.topics.length : 0}</span><span class="label">Topics</span></div>
+      </div>
+      <div style="padding: 12px; background: var(--green-bg); border-radius: var(--radius-sm); border: 1px solid rgba(0,230,118,0.3);">
+        <span class="badge badge-success">Validation passed</span>
+        <span style="margin-left: 12px; color: var(--green); font-size: 0.9rem;">All checks passed.</span>
+      </div>
+    `;
+    showBtn.classList.remove('hidden');
+  } else {
+    let html = '<div style="padding: 12px; background: var(--red-bg); border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid rgba(255,82,82,0.3);">';
+    html += '<span class="badge badge-error">Validation failed</span>';
+    html += '</div>';
+    if (result.issues && result.issues.length) {
+      html += '<ul class="issues-list">';
+      result.issues.forEach(issue => {
+        const cls = issue.toLowerCase().includes('error') || issue.toLowerCase().includes('fail') ? 'issue-error' : 'issue-warning';
+        html += '<li class="' + cls + '">' + escapeHtml(issue) + '</li>';
+      });
+      html += '</ul>';
+    }
+    if (result.data && result.data.questions) {
+      // Even with issues, show what we got
+      const qs = result.data.questions;
+      html += '<div class="summary-row" style="margin-top: 16px;">';
+      html += '<div class="stat-box"><span class="num">' + qs.length + '</span><span class="label">Questions parsed</span></div>';
+      html += '</div>';
+    }
+    container.innerHTML = html;
+    showBtn.classList.add('hidden');
+  }
+  document.getElementById('validateStatus').innerHTML = '';
+}
+
+// --- Step 4: Show assessment ---
+function showReview() {
+  const data = state.assessmentData;
+  if (!data || !data.questions) { showToast('No assessment data', 'error'); return; }
+
+  // Meta
+  const metaEl = document.getElementById('assessmentMeta');
+  let html = '';
+  if (data.assessment_name) {
+    html += '<h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">' + escapeHtml(data.assessment_name) + '</h2>';
+  }
+  if (data.about_assessment && data.about_assessment.length) {
+    const paras = Array.isArray(data.about_assessment) ? data.about_assessment : [data.about_assessment];
+    paras.forEach(p => {
+      if (p) html += '<p style="margin-bottom: 12px; font-size: 0.9rem; color: var(--text-dim); line-height: 1.6;">' + escapeHtml(p) + '</p>';
+    });
+  }
+  if (data.who_this_is_for) {
+    html += '<p style="margin-bottom: 16px; font-size: 0.9rem;"><strong>Who this is for:</strong> ' + escapeHtml(data.who_this_is_for) + '</p>';
+  }
+  if (data.learning_outcomes && data.learning_outcomes.length) {
+    html += '<div style="margin-bottom: 16px;">';
+    html += '<div style="font-weight: 600; margin-bottom: 4px; color: var(--text-dim);">Learning Outcomes</div>';
+    html += '<ul style="list-style: none;">';
+    data.learning_outcomes.forEach(lo => {
+      html += '<li style="padding: 4px 0; font-size: 0.9rem;">\u2713 ' + escapeHtml(lo) + '</li>';
+    });
+    html += '</ul></div>';
+  }
+  if (data.topics && data.topics.length) {
+    html += '<div style="margin-bottom: 16px;">';
+    html += '<div style="font-weight: 600; margin-bottom: 4px; color: var(--text-dim);">Topics</div>';
+    html += '<div style="display: flex; gap: 8px; flex-wrap: wrap;">';
+    data.topics.forEach(t => {
+      html += '<span class="badge badge-info">' + escapeHtml(t) + '</span>';
+    });
+    html += '</div></div>';
+  }
+  const qs = data.questions;
+  html += '<div style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-dim);">' + qs.length + ' questions</div>';
+  metaEl.innerHTML = html;
+
+  // Questions
+  const qEl = document.getElementById('assessmentQuestions');
+  let qHtml = '';
+  qs.forEach((q, i) => {
+    qHtml += '<div class="question">';
+    qHtml += '<div class="q-stem">Q' + (i + 1) + '. ';
+    if (q.topic) qHtml += '<span class="q-tag">' + escapeHtml(q.topic) + '</span>';
+    qHtml += '<span style="margin-left: 8px;">' + escapeHtml(q.stem) + '</span></div>';
+
+    qHtml += '<div class="options">';
+    const letters = ['A', 'B', 'C', 'D'];
+    const options = [q.a, q.b, q.c, q.d];
+    const correct = q.answer && q.answer.toUpperCase();
+    options.forEach((opt, oi) => {
+      if (!opt) return;
+      const isCorrect = letters[oi] === correct;
+      qHtml += '<div class="option' + (isCorrect ? ' correct' : '') + '">';
+      qHtml += '<span class="letter">' + letters[oi] + '</span>';
+      qHtml += escapeHtml(opt);
+      qHtml += '</div>';
+    });
+    qHtml += '</div>';
+
+    qHtml += '<div class="explanation-toggle" onclick="this.nextElementSibling.classList.toggle(\'visible\'); this.textContent = this.nextElementSibling.classList.contains(\'visible\') ? \'Hide explanation\' : \'Show explanation\'; this.textContent = this.nextElementSibling.classList.contains(\'visible\') ? \'Hide explanation\' : \'Show explanation\';">Show explanation</div>';
+    qHtml += '<div class="explanation">';
+    if (q.answer) qHtml += '<strong style="color: var(--green);">Answer: ' + escapeHtml(q.answer) + '</strong><br><br>';
+    if (q.explanation) qHtml += escapeHtml(q.explanation);
+    qHtml += '</div>';
+
+    qHtml += '</div>';
+  });
+  qEl.innerHTML = qHtml;
+
+  setStep(4);
+}
+
+function goToStep3() { setStep(3); }
+
+function resetAll() {
+  state = {
+    promptId: null, prompt: '', model: '', baseUrl: '',
+    rawOutput: '', assessmentData: null, issues: [], validationPassed: false
+  };
+  document.getElementById('courseName').value = '';
+  document.getElementById('promptArea').value = '';
+  document.getElementById('llmResponse').value = '';
+  document.getElementById('startStatus').classList.add('hidden');
+  document.getElementById('validateStatus').classList.add('hidden');
+  document.getElementById('validationResults').innerHTML = '';
+  document.getElementById('assessmentMeta').innerHTML = '';
+  document.getElementById('assessmentQuestions').innerHTML = '';
+  document.getElementById('btnShowReview').classList.add('hidden');
+  setStep(1);
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Enter key in course field
+document.getElementById('courseName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleStart();
+});
+</script>
+</body>
+</html>
