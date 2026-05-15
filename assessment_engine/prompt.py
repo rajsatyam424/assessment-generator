@@ -1,57 +1,34 @@
 """
 Prompt template for the LLM.
-Generates a focused, clean prompt for 25-question JSON assessments.
+Loads the master JSON prompt from ~/Desktop/assessment-mcq-prompt-v2.md,
+injects the course name, and appends a JSON output instruction.
 """
 
+import json
 import os
 
 _MASTER_PROMPT_PATH = os.path.expanduser("~/Desktop/assessment-mcq-prompt-v2.md")
 
 
 def build_prompt(course_name: str) -> str:
-    """Build a self-contained prompt for the LLM."""
-    prompt = _BASE_PROMPT.replace("{course_name}", course_name)
-    return prompt + _OUTPUT_INSTRUCTION
+    """Load master JSON prompt, inject course name, append output format instruction."""
+    path = os.environ.get("ASSESSMENT_PROMPT_PATH", _MASTER_PROMPT_PATH)
+    if os.path.isfile(path):
+        with open(path) as f:
+            raw = f.read()
+        try:
+            master = json.loads(raw)
+        except json.JSONDecodeError:
+            master = json.loads(raw.replace("[COURSE_NAME]", course_name))
+    else:
+        master = _default_json_prompt(course_name)
 
+    # Inject course name into the task field
+    master["course_name"] = course_name
 
-_BASE_PROMPT = """You are a learning assessment designer. Generate a complete 25-question multiple choice learning assessment for: {course_name}
+    prompt_str = json.dumps(master, indent=2)
+    return prompt_str + _OUTPUT_INSTRUCTION
 
-## CONTEXT
-
-This is a learning assessment, not just a test. Each question must test real understanding. Explanations are the primary teaching component — they must do the job of a trainer.
-
-Learner level: Beginner. Use globally recognised standards. No jargon without explanation.
-
-## PLANNING (do in order)
-
-Step 1: Define 4 to 6 Learning Outcomes. Action verbs. Concrete. Testable.
-
-Step 2: Break LOs into 5 to 8 topics.
-
-Step 3: Plan question types. Mix across all 25:
-- Concept (8 to 10): definitions, principles, recognition
-- Practical (8 to 10): applied knowledge, best practices
-- Scenario (7 to 9): realistic 1-2 sentence situation, ask best response
-
-Step 4: Pre-plan answer key for Q1 to Q25. Target every letter count: A=6, B=6, C=7, D=6. No letter below 4 or above 8.
-
-Step 5: Write each question to fit its pre-assigned answer letter and type. Use plausible distractors. All four options roughly same length. No trick questions. Self-contained stems.
-
-## EXPLANATIONS
-
-Every explanation must:
-- Cover the LO the question tests
-- Include one fresh practical example (different from the scenario in the question)
-- Be conversational: direct speech, active voice, short sentences
-- Be 3 to 5 sentences (50 to 80 words)
-- Use proper English, complete sentences
-- Sound like a trainer talking across a table, not a textbook paragraph
-
-Style rules:
-- NO dashes (em, en, figure dashes) anywhere. Use periods or commas instead.
-- No sentences starting with "Not" (unless it's "Note")
-- Never use these words: navigate, embrace, journey, wisdom, vastness, shaped by, examine, deserve, rush, drive
-"""
 
 _OUTPUT_INSTRUCTION = """
 
@@ -78,43 +55,41 @@ Return exactly 25 questions as valid JSON. No markdown, no code fences, no extra
       "D": "Option D",
       "answer": "B",
       "explanation": "Explanation with a fresh example."
-    },
-    {
-      "number": 2,
-      "topic": "Topic Name",
-      "qtype": "practical",
-      "question": "Which approach works best when doing Y?",
-      "A": "Option A",
-      "B": "Option B",
-      "C": "Option C",
-      "D": "Option D",
-      "answer": "C",
-      "explanation": "Explanation with a fresh example."
-    },
-    {
-      "number": 3,
-      "topic": "Topic Name",
-      "qtype": "scenario",
-      "question": "You are in a situation where Z happens. What should you do first?",
-      "A": "Option A",
-      "B": "Option B",
-      "C": "Option C",
-      "D": "Option D",
-      "answer": "A",
-      "explanation": "Explanation with a fresh example."
     }
   ]
 }
 
 VERIFY BEFORE OUTPUT:
-- Count A answers: must be exactly 6 across 25 questions
-- Count B answers: must be exactly 6
-- Count C answers: must be exactly 7
-- Count D answers: must be exactly 6
-- Count concept qtype: between 8 and 10
-- Count practical qtype: between 8 and 10
-- Count scenario qtype: between 7 and 9
-- No dashes anywhere
-- No banned words
-- Every explanation has a fresh example
+- Count A answers: exactly 6 | Count B: exactly 6 | Count C: exactly 7 | Count D: exactly 6
+- concept qtype: 8-10 | practical: 8-10 | scenario: 7-9
+- No dashes | No banned words | Every explanation has a fresh example
 """
+
+
+def _default_json_prompt(course_name: str) -> dict:
+    return {
+        "task": f"Generate a 25-question multiple choice learning assessment",
+        "course_name": course_name,
+        "assessment_type": "learning_assessment",
+        "philosophy": [
+            "This is a learning assessment, not just a test.",
+            "Explanations are the primary teaching component."
+        ],
+        "planning_sequence": [
+            {"step": 1, "action": "Define 4 to 6 Learning Outcomes. Action verbs. Concrete."},
+            {"step": 2, "action": "Break into 5 to 8 topics."},
+            {"step": 3, "action": "Plan qtype distribution: concept 8-10, practical 8-10, scenario 7-9."},
+            {"step": 4, "action": "Pre-plan answer key. Target: A=6, B=6, C=7, D=6."},
+            {"step": 5, "action": "Write 25 questions with plausible distractors, same-length options, no trick questions."},
+            {"step": 6, "action": "Write explanations: cover the LO, include one fresh practical example, conversational tone."}
+        ],
+        "style_rules": [
+            "NO dashes (em, en, figure) anywhere. Use periods or commas.",
+            "No sentences starting with 'Not'.",
+            "Never use: navigate, embrace, journey, wisdom, vastness, shaped by, examine, deserve, rush, drive.",
+            "Conversational trainer voice. Short sentences. Active voice."
+        ],
+        "learner_level": "beginner",
+        "standards": "globally recognised",
+        "audience": "general adult"
+    }
