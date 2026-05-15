@@ -27,39 +27,68 @@ _OUTPUT_INSTRUCTION = """
 
 Return ONLY valid JSON. No markdown, no code fences, no commentary, no extra text.
 
-JSON structure (exactly this):
+IMPORTANT RULES — FOLLOW THESE EXACTLY:
+- Exactly 25 questions in the questions array
+- answer field is a single letter A/B/C/D matching the correct option
+- Every question has all 4 options (A, B, C, D)
+- Answer distribution MUST be: A=6, B=6, C=7, D=6 (you plan this before writing questions)
+- Question type distribution: concept 8-10, practical 8-10, scenario 7-9
+- Every question MUST have a "qtype" field set to exactly "concept", "practical", or "scenario"
+- No dashes (em/en/figure) anywhere in the entire output
+- No banned words: navigate, embrace, journey, wisdom, vastness, shaped by, examine, deserve, rush, drive
+- Proper English grammar throughout
+- Valid JSON only — parseable by json.loads()
+
+JSON structure (exactly this format):
 
 {
-  "assessment_name": "string — reflecting actual coverage, include learner level",
-  "about_assessment": ["Paragraph 1 describing full domain", "Paragraph 2: what this covers and why"],
-  "who_this_is_for": "string — audience and learner level",
-  "learning_outcomes": ["string", "string", ...],
-  "topics": ["string", "string", ...],
-  "estimated_time": "string",
+  "assessment_name": "string with learner level",
+  "about_assessment": ["Paragraph 1", "Paragraph 2"],
+  "who_this_is_for": "string",
+  "learning_outcomes": ["LO1", "LO2", "LO3", "LO4"],
+  "topics": ["Topic 1", "Topic 2", "Topic 3", "Topic 4", "Topic 5"],
+  "estimated_time": "30 minutes",
   "questions": [
     {
       "number": 1,
-      "topic": "[Topic tag]",
-      "question": "Question stem text",
+      "topic": "Topic Name",
+      "qtype": "concept",
+      "question": "What is...?",
+      "A": "Option A",
+      "B": "Option B",
+      "C": "Option C",
+      "D": "Option D",
+      "answer": "B",
+      "explanation": "Explanation with a fresh example."
+    },
+    {
+      "number": 2,
+      "topic": "Topic Name",
+      "qtype": "practical",
+      "question": "Which is the best way to...?",
+      "A": "Option A",
+      "B": "Option B",
+      "C": "Option C",
+      "D": "Option D",
+      "answer": "C",
+      "explanation": "Explanation with a fresh example."
+    },
+    {
+      "number": 3,
+      "topic": "Topic Name",
+      "qtype": "scenario",
+      "question": "You are in a situation where... What should you do?",
       "A": "Option A",
       "B": "Option B",
       "C": "Option C",
       "D": "Option D",
       "answer": "A",
-      "explanation": "Explanation text with fresh example"
+      "explanation": "Explanation with a fresh example."
     }
   ]
 }
 
-Rules:
-- Exactly 25 questions in the questions array
-- answer field is a single letter A/B/C/D matching the correct option
-- Every question has all 4 options (A, B, C, D)
-- distribution target: A=6, B=6, C=7, D=6
-- No dashes (em/en/figure) anywhere in the entire output
-- No banned words: navigate, embrace, journey, wisdom, vastness, shaped by, examine, deserve, rush, drive
-- Proper English grammar throughout
-- Valid JSON only — parseable by json.loads()
+Pre-plan your answer key across all 25 before writing: count A, B, C, D and make sure they hit the target distribution exactly. Mix qtype values across the 25 questions — do not set all to the same type.
 """
 
 
