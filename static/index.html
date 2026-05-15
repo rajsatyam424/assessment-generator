@@ -799,39 +799,35 @@ function renderValidation(result) {
 
   if (result.success && result.data) {
     const qs = result.data.questions || [];
-    container.innerHTML = `
-      <div class="summary-row">
-        <div class="stat-box"><span class="num">${qs.length}</span><span class="label">Questions</span></div>
-        <div class="stat-box"><span class="num">${result.data.learning_outcomes ? result.data.learning_outcomes.length : 0}</span><span class="label">Learning Outcomes</span></div>
-        <div class="stat-box"><span class="num">${result.data.topics ? result.data.topics.length : 0}</span><span class="label">Topics</span></div>
-      </div>
-      <div style="padding: 12px; background: var(--green-bg); border-radius: var(--radius-sm); border: 1px solid rgba(255,0,110,0.3);">
-        <span class="badge badge-success">Validation passed</span>
-        <span style="margin-left: 12px; color: var(--green); font-size: 0.9rem;">All checks passed.</span>
-      </div>
-    `;
+    container.innerHTML = '<div class="summary-row">' +
+      '<div class="stat-box"><span class="num">' + qs.length + '</span><span class="label">Questions</span></div>' +
+      '<div class="stat-box"><span class="num">' + (result.data.learning_outcomes ? result.data.learning_outcomes.length : 0) + '</span><span class="label">Learning Outcomes</span></div>' +
+      '<div class="stat-box"><span class="num">' + (result.data.topics ? result.data.topics.length : 0) + '</span><span class="label">Topics</span></div>' +
+      '</div>' +
+      '<div style="padding: 12px; background: var(--green-bg); border-radius: var(--radius-sm); border: 1px solid rgba(255,0,110,0.3);">' +
+      '<span class="badge badge-success">Validation passed</span>' +
+      '<span style="margin-left: 12px; color: var(--green); font-size: 0.9rem;">All checks passed.</span></div>';
     showBtn.classList.remove('hidden');
   } else {
-    let html = '<div style="padding: 12px; background: var(--red-bg); border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid rgba(255,0,110,0.3);">';
-    html += '<span class="badge badge-error">Validation failed</span>';
+    let html = '<div style="padding: 12px; background: var(--amber-bg); border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid rgba(255,0,110,0.3);">';
+    html += '<span class="badge badge-warning">Validation notes</span>';
+    html += '<span style="margin-left: 12px; color: var(--text-dim); font-size: 0.9rem;">The assessment was generated but some quality checks flagged issues. You can still view and attempt it.</span>';
     html += '</div>';
     if (result.issues && result.issues.length) {
       html += '<ul class="issues-list">';
       result.issues.forEach(issue => {
-        const cls = issue.toLowerCase().includes('error') || issue.toLowerCase().includes('fail') ? 'issue-error' : 'issue-warning';
-        html += '<li class="' + cls + '">' + escapeHtml(issue) + '</li>';
+        html += '<li class="issue-warning">' + escapeHtml(issue) + '</li>';
       });
       html += '</ul>';
     }
     if (result.data && result.data.questions) {
-      // Even with issues, show what we got
       const qs = result.data.questions;
       html += '<div class="summary-row" style="margin-top: 16px;">';
       html += '<div class="stat-box"><span class="num">' + qs.length + '</span><span class="label">Questions parsed</span></div>';
       html += '</div>';
     }
     container.innerHTML = html;
-    showBtn.classList.add('hidden');
+    showBtn.classList.remove('hidden');
   }
 }
 

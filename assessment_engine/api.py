@@ -168,7 +168,7 @@ async def validate_assessment(req: ValidateRequest):
 
     return ValidateResponse(
         success=result.passed,
-        data=data if result.passed else None,
+        data=data,
         issues=result.issues,
     )
 
