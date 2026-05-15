@@ -522,7 +522,7 @@ async function handleGenerate() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Generating...';
   status.classList.remove('hidden');
-  status.innerHTML = '<span class="spinner"></span> Getting prompt from server...';
+  status.innerHTML = '<span class="spinner"></span> Setting the stage...';
 
   try {
     const startResp = await fetch(API_BASE + '/start', {
@@ -538,8 +538,23 @@ async function handleGenerate() {
     state.model = startData.model;
     state.baseUrl = startData.base_url;
 
-    status.innerHTML = '<span class="spinner"></span> Calling DeepSeek from browser (15-60s)...';
+    status.innerHTML = '<span class="spinner"></span> Thinking up 25 killer questions...';
     await new Promise(r => setTimeout(r, 100));
+
+    // Rotate status messages while waiting
+    const messages = [
+      'Thinking up 25 killer questions...',
+      'Reviewing distractors for maximum trickiness...',
+      'Writing explanations that actually teach...',
+      'Making sure answer C is not always the right one...',
+      'Cross-checking learning outcomes...',
+      'Preparing the gotchas...'
+    ];
+    let msgIdx = 0;
+    const msgTimer = setInterval(() => {
+      msgIdx = (msgIdx + 1) % messages.length;
+      status.innerHTML = '<span class="spinner"></span> ' + messages[msgIdx];
+    }, 10000);
 
     // Step 2: Call DeepSeek directly from browser
     const llmResp = await fetch(startData.base_url + '/chat/completions', {
@@ -571,7 +586,8 @@ async function handleGenerate() {
     state.rawOutput = rawOutput;
 
     // Step 3: Validate via /validate
-    status.innerHTML = '<span class="spinner"></span> Validating...';
+    clearInterval(msgTimer);
+    status.innerHTML = '<span class="spinner"></span> Checking that every answer actually makes sense...';
     const valResp = await fetch(API_BASE + '/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -594,9 +610,9 @@ async function handleGenerate() {
     status.innerHTML = '<span class="badge badge-error">' + e.message + '</span>';
     showToast(e.message, 'error');
   } finally {
+    clearInterval(msgTimer);
     btn.disabled = false;
     btn.innerHTML = 'Generate';
-    btnStart.disabled = false;
   }
 }
 
