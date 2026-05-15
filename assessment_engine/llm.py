@@ -75,7 +75,7 @@ def call_llm(
             {"role": "user", "content": prompt},
         ],
         temperature=0.3,
-        response_format={"type": "json_object"},
+        timeout=30,
     )
 
     raw = response.choices[0].message.content
