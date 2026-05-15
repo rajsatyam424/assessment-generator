@@ -21,7 +21,11 @@ def _env_int(key: str, default: int) -> int:
 # LLM
 PROVIDER = _env_str("ASSESSMENT_PROVIDER", "openrouter")
 MODEL = _env_str("ASSESSMENT_MODEL", "gpt-4o-mini")
-API_KEY = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+API_KEY = (
+    os.environ.get("OPENROUTER_API_KEY")
+    or os.environ.get("DEEPSEEK_API_KEY")
+    or os.environ.get("OPENAI_API_KEY", "")
+)
 
 # Output
 OUTPUT_DIR = Path(_env_str("ASSESSMENT_OUTPUT_DIR", "/tmp/assessments"))
