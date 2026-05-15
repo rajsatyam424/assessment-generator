@@ -53,7 +53,74 @@
     100% { transform: translate(-5%, -5%); }
   }
 
-  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  .container {
+    max-width: 1260px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Sidebars */
+  .sidebar {
+    position: sticky;
+    top: 40px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    font-size: 0.85rem;
+    min-height: 200px;
+  }
+  .sidebar-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+  .sidebar-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 4px;
+    border-left: 3px solid transparent;
+  }
+  .sidebar-item:hover {
+    background: var(--surface-2);
+  }
+  .sidebar-item.active {
+    background: var(--accent-glow);
+    border-left-color: var(--accent);
+  }
+  .sidebar-item .title {
+    font-weight: 500;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sidebar-item .meta {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .sidebar-empty {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 24px 0;
+    line-height: 1.6;
+  }
+
+  /* Main content area */
+  .main-content {
+    min-width: 0;
+  }
 
   /* Header */
   header {
@@ -404,7 +471,9 @@
     background: var(--accent-glow);
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 800px) {
+    .container { grid-template-columns: 1fr; padding: 20px 16px; }
+    .sidebar { display: none; }
     .container { padding: 20px 16px; }
     header h1 { font-size: 1.6rem; }
     .card { padding: 20px; }
@@ -417,6 +486,17 @@
 </head>
 <body>
 <div class="container">
+
+  <!-- Left sidebar: History -->
+  <div class="sidebar" id="leftSidebar">
+    <div class="sidebar-title">History</div>
+    <div id="historyList">
+      <div class="sidebar-empty">Your assessments will appear here</div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main-content">
 
   <header>
     <h1>Assessment Generator</h1>
@@ -469,6 +549,18 @@
 
 </div>
 
+<!-- Right sidebar: Stats & Quick Jump -->
+<div class="sidebar" id="rightSidebar">
+  <div class="sidebar-title">Quick View</div>
+  <div id="rightSidebarContent">
+    <div class="sidebar-empty">
+      Stats and<br>question index<br>appear here<br>after generation
+    </div>
+  </div>
+</div>
+
+</div>
+
 <script>
 const API_BASE = window.location.origin;
 let state = {
@@ -509,8 +601,8 @@ function setStep(step) {
 }
 
 function goToStep1() { setStep(1); }
-function goToStep3() { setStep(2); }
 function goToStep4() { setStep(3); }
+function goToStep3() { setStep(2); }
 
 // --- Generate ---
 async function handleGenerate() {
@@ -605,6 +697,7 @@ async function handleGenerate() {
       : '<span class="badge badge-warning">Generated with some issues</span>';
 
     renderValidation(valData);
+    updateSidebars(valData.data, name);
     setStep(2);
   } catch (e) {
     status.innerHTML = '<span class="badge badge-error">' + e.message + '</span>';
@@ -784,10 +877,8 @@ function showReview() {
   });
   qEl.innerHTML = qHtml;
 
-  setStep(4);
+  setStep(3);
 }
-
-function goToStep3() { setStep(3); }
 
 function resetAll() {
   state = {
@@ -808,6 +899,76 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// --- History ---
+let historyIndex = 0;
+function updateSidebars(data, courseName) {
+  // Left sidebar: add to history
+  const list = document.getElementById('historyList');
+  const empty = list.querySelector('.sidebar-empty');
+  if (empty) empty.remove();
+
+  const name = (data && data.assessment_name) || courseName + ' Assessment';
+  const qCount = (data && data.questions) ? data.questions.length : 0;
+  const idx = ++historyIndex;
+
+  const item = document.createElement('div');
+  item.className = 'sidebar-item active';
+  item.innerHTML = '<div class="title">' + escapeHtml(name) + '</div><div class="meta">' + qCount + ' questions</div>';
+  item.onclick = () => {
+    document.querySelectorAll('#historyList .sidebar-item').forEach(el => el.classList.remove('active'));
+    item.classList.add('active');
+    if (state.assessmentData) {
+      showReview();
+    }
+  };
+  list.insertBefore(item, list.firstChild);
+
+  // Right sidebar: stats + question index
+  updateRightSidebar(data);
+}
+
+function updateRightSidebar(data) {
+  const container = document.getElementById('rightSidebarContent');
+  let html = '';
+
+  if (data && data.questions) {
+    const qs = data.questions;
+    // Stats
+    html += '<div class="sidebar-title" style="margin-top: 0;">Stats</div>';
+    html += '<div style="font-size: 0.8rem; line-height: 1.8; margin-bottom: 16px;">';
+    const types = {};
+    qs.forEach(q => { types[q.qtype] = (types[q.qtype] || 0) + 1; });
+    html += '<div>Questions: <strong>' + qs.length + '</strong></div>';
+    Object.entries(types).forEach(([t, c]) => {
+      html += '<div>' + t + ': <strong>' + c + '</strong></div>';
+    });
+    html += '</div>';
+
+    // Question index
+    html += '<div class="sidebar-title">Jump to Question</div>';
+    html += '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+    qs.forEach((q, i) => {
+      const tag = (q.topic || '').replace(/[\[\]]/g, '').substring(0, 6);
+      html += '<div onclick="scrollToQuestion(' + (i + 1) + ')" style="cursor:pointer;padding:4px 8px;border-radius:4px;background:var(--surface-2);font-size:0.75rem;border:1px solid var(--border);transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\'">Q' + (i + 1) + (tag ? ' ' + escapeHtml(tag) : '') + '</div>';
+    });
+    html += '</div>';
+  } else {
+    html = '<div class="sidebar-empty">Stats and<br>question index<br>appear here<br>after generation</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function scrollToQuestion(n) {
+  const els = document.querySelectorAll('.question');
+  if (els[n - 1]) {
+    els[n - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    els[n - 1].style.transition = 'box-shadow 0.3s';
+    els[n - 1].style.boxShadow = '0 0 0 3px var(--accent-glow)';
+    setTimeout(() => { els[n - 1].style.boxShadow = ''; }, 1500);
+  }
 }
 
 // Enter key in course field
