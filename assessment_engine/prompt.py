@@ -1,50 +1,68 @@
 """
 Prompt template for the LLM.
-Loads the master prompt from ~/Desktop/assessment-mcq-prompt-v2.md
-and appends a strict JSON output instruction for API use.
+Generates a focused, clean prompt for 25-question JSON assessments.
 """
 
 import os
 
-
 _MASTER_PROMPT_PATH = os.path.expanduser("~/Desktop/assessment-mcq-prompt-v2.md")
 
 
-def _load_master_prompt() -> str:
-    """Load the full master prompt from Desktop."""
-    path = os.environ.get("ASSESSMENT_PROMPT_PATH", _MASTER_PROMPT_PATH)
-    if os.path.isfile(path):
-        with open(path) as f:
-            return f.read()
-    # Fallback: use a hardcoded minimal version
-    # This should never happen in production — the prompt file is committed.
-    return _FALLBACK_PROMPT
+def build_prompt(course_name: str) -> str:
+    """Build a self-contained prompt for the LLM."""
+    prompt = _BASE_PROMPT.replace("{course_name}", course_name)
+    return prompt + _OUTPUT_INSTRUCTION
 
+
+_BASE_PROMPT = """You are a learning assessment designer. Generate a complete 25-question multiple choice learning assessment for: {course_name}
+
+## CONTEXT
+
+This is a learning assessment, not just a test. Each question must test real understanding. Explanations are the primary teaching component — they must do the job of a trainer.
+
+Learner level: Beginner. Use globally recognised standards. No jargon without explanation.
+
+## PLANNING (do in order)
+
+Step 1: Define 4 to 6 Learning Outcomes. Action verbs. Concrete. Testable.
+
+Step 2: Break LOs into 5 to 8 topics.
+
+Step 3: Plan question types. Mix across all 25:
+- Concept (8 to 10): definitions, principles, recognition
+- Practical (8 to 10): applied knowledge, best practices
+- Scenario (7 to 9): realistic 1-2 sentence situation, ask best response
+
+Step 4: Pre-plan answer key for Q1 to Q25. Target every letter count: A=6, B=6, C=7, D=6. No letter below 4 or above 8.
+
+Step 5: Write each question to fit its pre-assigned answer letter and type. Use plausible distractors. All four options roughly same length. No trick questions. Self-contained stems.
+
+## EXPLANATIONS
+
+Every explanation must:
+- Cover the LO the question tests
+- Include one fresh practical example (different from the scenario in the question)
+- Be conversational: direct speech, active voice, short sentences
+- Be 3 to 5 sentences (50 to 80 words)
+- Use proper English, complete sentences
+- Sound like a trainer talking across a table, not a textbook paragraph
+
+Style rules:
+- NO dashes (em, en, figure dashes) anywhere. Use periods or commas instead.
+- No sentences starting with "Not" (unless it's "Note")
+- Never use these words: navigate, embrace, journey, wisdom, vastness, shaped by, examine, deserve, rush, drive
+"""
 
 _OUTPUT_INSTRUCTION = """
 
-## FINAL INSTRUCTION — STRICT JSON OUTPUT
+## OUTPUT — STRICT JSON ONLY
 
-Return ONLY valid JSON. No markdown, no code fences, no commentary, no extra text.
-
-IMPORTANT RULES — FOLLOW THESE EXACTLY:
-- Exactly 25 questions in the questions array
-- answer field is a single letter A/B/C/D matching the correct option
-- Every question has all 4 options (A, B, C, D)
-- Answer distribution MUST be: A=6, B=6, C=7, D=6 (you plan this before writing questions)
-- Question type distribution: concept 8-10, practical 8-10, scenario 7-9
-- Every question MUST have a "qtype" field set to exactly "concept", "practical", or "scenario"
-- No dashes (em/en/figure) anywhere in the entire output
-- No banned words: navigate, embrace, journey, wisdom, vastness, shaped by, examine, deserve, rush, drive
-- Proper English grammar throughout
-- Valid JSON only — parseable by json.loads()
-
-JSON structure (exactly this format):
+Return exactly 25 questions as valid JSON. No markdown, no code fences, no extra text.
 
 {
-  "assessment_name": "string with learner level",
-  "about_assessment": ["Paragraph 1", "Paragraph 2"],
-  "who_this_is_for": "string",
+  "assessment_name": "string with learner level reflecting actual coverage",
+  "about_assessment": ["Full domain paragraph", "What this covers paragraph"],
+  "who_this_is_for": "Audience and learner level",
   "learning_outcomes": ["LO1", "LO2", "LO3", "LO4"],
   "topics": ["Topic 1", "Topic 2", "Topic 3", "Topic 4", "Topic 5"],
   "estimated_time": "30 minutes",
@@ -53,7 +71,7 @@ JSON structure (exactly this format):
       "number": 1,
       "topic": "Topic Name",
       "qtype": "concept",
-      "question": "What is...?",
+      "question": "What is the correct definition of X?",
       "A": "Option A",
       "B": "Option B",
       "C": "Option C",
@@ -65,7 +83,7 @@ JSON structure (exactly this format):
       "number": 2,
       "topic": "Topic Name",
       "qtype": "practical",
-      "question": "Which is the best way to...?",
+      "question": "Which approach works best when doing Y?",
       "A": "Option A",
       "B": "Option B",
       "C": "Option C",
@@ -77,7 +95,7 @@ JSON structure (exactly this format):
       "number": 3,
       "topic": "Topic Name",
       "qtype": "scenario",
-      "question": "You are in a situation where... What should you do?",
+      "question": "You are in a situation where Z happens. What should you do first?",
       "A": "Option A",
       "B": "Option B",
       "C": "Option C",
@@ -88,22 +106,15 @@ JSON structure (exactly this format):
   ]
 }
 
-Pre-plan your answer key across all 25 before writing: count A, B, C, D and make sure they hit the target distribution exactly. Mix qtype values across the 25 questions — do not set all to the same type.
-"""
-
-
-def build_prompt(course_name: str) -> str:
-    """Inject course_name into the master prompt and append JSON output instruction."""
-    master = _load_master_prompt()
-    prompt = master.replace("[COURSE NAME]", course_name).replace("[COURSE_NAME]", course_name)
-    return prompt + _OUTPUT_INSTRUCTION
-
-
-_FALLBACK_PROMPT = """You are a learning assessment designer. Generate a complete 25-question multiple choice learning assessment for the course named {course_name}.
-
-This is a learning assessment, not just a test. Each question must test a real concept and each explanation must teach the learner.
-
-Create 5 to 8 topics from the course name. Distribute 25 questions across topics (3 to 5 each). Mix concept, practical, and scenario questions. Pre-plan answer distribution: A=6, B=6, C=7, D=6.
-
-Each explanation must be conversational, include a fresh practical example, and cover the learning outcome it tests. No dashes, no banned words, no sentences starting with "Not".
+VERIFY BEFORE OUTPUT:
+- Count A answers: must be exactly 6 across 25 questions
+- Count B answers: must be exactly 6
+- Count C answers: must be exactly 7
+- Count D answers: must be exactly 6
+- Count concept qtype: between 8 and 10
+- Count practical qtype: between 8 and 10
+- Count scenario qtype: between 7 and 9
+- No dashes anywhere
+- No banned words
+- Every explanation has a fresh example
 """
