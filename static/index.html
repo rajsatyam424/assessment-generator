@@ -14,16 +14,16 @@
     --border: #2d2d50;
     --text: #e8e8f0;
     --text-dim: #8888aa;
-    --accent: #7c4dff;
-    --accent-glow: rgba(124, 77, 255, 0.3);
-    --green: #00e676;
-    --green-bg: rgba(0, 230, 118, 0.12);
-    --amber: #ffd54f;
-    --amber-bg: rgba(255, 213, 79, 0.12);
-    --red: #ff5252;
-    --red-bg: rgba(255, 82, 82, 0.12);
-    --blue: #448aff;
-    --blue-bg: rgba(68, 138, 255, 0.12);
+    --accent: #FF006E;
+    --accent-glow: rgba(255, 0, 110, 0.3);
+    --green: #FF006E;
+    --green-bg: rgba(255, 0, 110, 0.12);
+    --amber: #FF006E;
+    --amber-bg: rgba(255, 0, 110, 0.12);
+    --red: #FF006E;
+    --red-bg: rgba(255, 0, 110, 0.12);
+    --blue: #FF006E;
+    --blue-bg: rgba(255, 0, 110, 0.12);
     --radius: 12px;
     --radius-sm: 8px;
   }
@@ -43,9 +43,9 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(ellipse at 20% 50%, rgba(124, 77, 255, 0.06) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(0, 230, 118, 0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(68, 138, 255, 0.04) 0%, transparent 50%);
+    background: radial-gradient(ellipse at 20% 50%, rgba(255, 0, 110, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(255, 0, 110, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(255, 0, 110, 0.04) 0%, transparent 50%);
     z-index: -1;
     animation: drift 30s ease-in-out infinite alternate;
   }
@@ -64,7 +64,7 @@
   header h1 {
     font-size: 2.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #7c4dff, #00e676);
+    background: linear-gradient(135deg, #FF006E, #FF006E);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -85,7 +85,7 @@
     margin-bottom: 24px;
     transition: border-color 0.2s;
   }
-  .card:hover { border-color: rgba(124, 77, 255, 0.3); }
+  .card:hover { border-color: rgba(255, 0, 110, 0.3); }
   .card-title {
     font-size: 1.1rem;
     font-weight: 600;
@@ -147,13 +147,13 @@
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-primary {
-    background: linear-gradient(135deg, #7c4dff, #651fff);
+    background: linear-gradient(135deg, #FF006E, #FF006E);
     color: white;
-    box-shadow: 0 4px 15px var(--accent-glow);
+    box-shadow: 0 4px 15px rgba(255, 0, 110, 0.3);
   }
   .btn-primary:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px var(--accent-glow);
+    box-shadow: 0 6px 20px rgba(255, 0, 110, 0.3);
   }
   .btn-secondary {
     background: var(--surface-2);
@@ -166,10 +166,10 @@
   .btn-success {
     background: var(--green-bg);
     color: var(--green);
-    border: 1px solid rgba(0, 230, 118, 0.3);
+    border: 1px solid rgba(255, 0, 110, 0.3);
   }
   .btn-success:hover:not(:disabled) {
-    background: rgba(0, 230, 118, 0.2);
+    background: rgba(255, 0, 110, 0.2);
   }
 
   /* Steps */
@@ -206,7 +206,7 @@
   .step.active {
     background: var(--accent-glow);
     color: var(--accent);
-    border: 1px solid rgba(124, 77, 255, 0.4);
+    border: 1px solid rgba(255, 0, 110, 0.4);
   }
   .step.active .num { background: var(--accent); color: white; }
   .step.done {
@@ -312,7 +312,7 @@
     margin-top: 12px;
     padding: 12px;
     border-radius: 6px;
-    background: rgba(124, 77, 255, 0.06);
+    background: rgba(255, 0, 110, 0.06);
     border-left: 3px solid var(--accent);
     font-size: 0.9rem;
     color: var(--text);
@@ -488,7 +488,7 @@ let toastTimer = null;
 function showToast(msg, type = 'info') {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.style.borderLeft = '4px solid ' + (type === 'error' ? '#ff5252' : type === 'success' ? '#00e676' : '#448aff');
+  el.style.borderLeft = '4px solid ' + (type === 'error' ? '#FF006E' : type === 'success' ? '#FF006E' : '#FF006E');
   el.classList.remove('hidden');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.add('hidden'), 4000);
@@ -663,14 +663,14 @@ function renderValidation(result) {
         <div class="stat-box"><span class="num">${result.data.learning_outcomes ? result.data.learning_outcomes.length : 0}</span><span class="label">Learning Outcomes</span></div>
         <div class="stat-box"><span class="num">${result.data.topics ? result.data.topics.length : 0}</span><span class="label">Topics</span></div>
       </div>
-      <div style="padding: 12px; background: var(--green-bg); border-radius: var(--radius-sm); border: 1px solid rgba(0,230,118,0.3);">
+      <div style="padding: 12px; background: var(--green-bg); border-radius: var(--radius-sm); border: 1px solid rgba(255,0,110,0.3);">
         <span class="badge badge-success">Validation passed</span>
         <span style="margin-left: 12px; color: var(--green); font-size: 0.9rem;">All checks passed.</span>
       </div>
     `;
     showBtn.classList.remove('hidden');
   } else {
-    let html = '<div style="padding: 12px; background: var(--red-bg); border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid rgba(255,82,82,0.3);">';
+    let html = '<div style="padding: 12px; background: var(--red-bg); border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid rgba(255,0,110,0.3);">';
     html += '<span class="badge badge-error">Validation failed</span>';
     html += '</div>';
     if (result.issues && result.issues.length) {
