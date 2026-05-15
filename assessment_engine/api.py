@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI):
     """Startup / shutdown."""
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     if not config.API_KEY:
-        logger.warning("OPENAI_API_KEY not set — generation will fail")
+        logger.warning("No API key set — generation will fail. Set OPENROUTER_API_KEY env var.")
     yield
 
 

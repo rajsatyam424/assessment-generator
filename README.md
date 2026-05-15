@@ -77,9 +77,9 @@ docker compose up -d
 
 | Variable | Default | Description |
 |---|---|---|
-| `OPENAI_API_KEY` | — | **Required.** OpenAI or OpenRouter API key |
-| `ASSESSMENT_PROVIDER` | `openai` | `openai` or `openrouter` |
-| `ASSESSMENT_MODEL` | `gpt-4o-mini` | LLM model name |
+| `OPENROUTER_API_KEY` | — | **Required.** OpenRouter API key (or `OPENAI_API_KEY` for direct OpenAI) |
+| `ASSESSMENT_PROVIDER` | `openrouter` | `openai` or `openrouter` |
+| `ASSESSMENT_MODEL` | `gpt-4o-mini` | LLM model name (e.g. `anthropic/claude-sonnet-4` on OpenRouter) |
 | `ASSESSMENT_OUTPUT_DIR` | `/tmp/assessments` | Where `.docx` files are saved |
 | `ASSESSMENT_CLEANUP_HOURS` | `24` | Auto-delete files after N hours |
 | `HOST` | `0.0.0.0` | Bind address |

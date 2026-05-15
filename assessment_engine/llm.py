@@ -41,22 +41,21 @@ def call_llm(
 
     if not key:
         raise ValueError(
-            "No API key found. Set OPENAI_API_KEY env var "
+            "No API key found. Set OPENROUTER_API_KEY (or OPENAI_API_KEY) env var "
             "or pass api_key explicitly."
         )
 
     client = OpenAI(api_key=key)
-    base_url = None
 
     if provider == "openrouter":
-        client.base_url = "https://openrouter.ai/api/v1"
+        client = OpenAI(api_key=key, base_url="https://openrouter.ai/api/v1")
     elif provider == "openai":
-        pass  # default
+        pass  # default base_url
     else:
         # Allow custom providers with a base_url
         env_url = config._env_str("OPENAI_BASE_URL", "")
         if env_url:
-            client.base_url = env_url
+            client = OpenAI(api_key=key, base_url=env_url)
 
     system = (
         "You are a precise learning assessment designer. "
