@@ -1,11 +1,12 @@
-.env
-__pycache__/
-*.pyc
-.DS_Store
-*.egg-info/
-dist/
-build/
-.venv/
-venv/
-*.docx
-.vercel
+     1|.env
+     2|__pycache__/
+     3|*.pyc
+     4|.DS_Store
+     5|*.egg-info/
+     6|dist/
+     7|build/
+     8|.venv/
+     9|venv/
+    10|*.docx
+    11|.vercel
+    12|

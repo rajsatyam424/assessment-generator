@@ -6,14 +6,8 @@ Or: python -m assessment_engine
 import uvicorn
 from . import config
 
-app = None  # lazy import to avoid circular deps on module-level import
-
 
 def main():
-    global app
-    from .api import app as _app
-    app = _app
-
     host = config._env_str("HOST", "0.0.0.0")
     port = config._env_int("PORT", 8000)
 
@@ -21,9 +15,7 @@ def main():
     print(f"  Provider: {config.PROVIDER}")
     print(f"  Model:    {config.MODEL}")
     print(f"  Server:   http://{host}:{port}")
-    print(f"  Docs:     http://{host}:{port}/docs")
-    print(f"  Output:   {config.OUTPUT_DIR}")
-    print()
+    print(f"  Output:   JSON only (no docx)")
 
     uvicorn.run(
         "assessment_engine.api:app",
